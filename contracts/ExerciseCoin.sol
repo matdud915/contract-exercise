@@ -3,14 +3,15 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./Owned.sol";
 
-contract ExerciseCoin is IERC20 {
+contract ExerciseCoin is IERC20, Owned {
     uint256 private totalCoinSupply = 1_000_000;
     uint256 private mintedCoins = 0;
-    mapping(address => uint256) accounts;
-    mapping(address => mapping(address => uint256)) allowances;
+    mapping(address => uint256) private accounts;
+    mapping(address => mapping(address => uint256)) private allowances;
 
-    constructor() {}
+    constructor() Owned(msg.sender) {}
 
     function totalSupply() external view override returns (uint256) {
         return totalCoinSupply;
@@ -20,8 +21,7 @@ contract ExerciseCoin is IERC20 {
         return accounts[account];
     }
 
-    function mint(uint256 amount) public {
-        // to sprawdzenie jest valid?
+    function mint(uint256 amount) onlyOwner public {
         require(totalCoinSupply >= (mintedCoins + amount), "Amount exceeds supply limit");
         accounts[msg.sender] += amount;
         mintedCoins += amount;

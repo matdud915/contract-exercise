@@ -39,6 +39,13 @@ describe("ExerciseCoin", function () {
     expect(postTxBalance).to.be.equal(preTxBalance + mintAmount);
   });
 
+  it("mint when not owner of the contract tries to invoke the contract should return error", async () => {
+    const contract = await deployContract();
+    const [_, notOwner] = await ethers.getSigners()
+
+    await expect(contract.connect(notOwner).mint(100)).to.be.revertedWith("Only owner can execute this action")
+  });
+
   it("mint when generated amount does exceed total supply limit throws error", async () => {
     const mintAmount = 1_000_001;
     const contract = await deployContract();
@@ -65,15 +72,14 @@ describe("ExerciseCoin", function () {
     const [sender, recipient] = await ethers.getSigners();
 
     const mintSenderTx = await contract.mint(200);
-    const mintRecipientTx = await contract.connect(recipient).mint(100);
-    await Promise.all([mintSenderTx.wait(), mintRecipientTx.wait()]);
+    await mintSenderTx.wait()
 
     const transferStatic = await contract.callStatic.transfer(recipient.address, 50);
     const transferTx = await contract.transfer(recipient.address, 50);
     await transferTx.wait();
 
     expect(await contract.balanceOf(sender.address)).to.be.equal(150);
-    expect(await contract.balanceOf(recipient.address)).to.be.equal(150);
+    expect(await contract.balanceOf(recipient.address)).to.be.equal(50);
     await expect(transferTx).to.emit(contract, "Transfer").withArgs(sender.address, recipient.address, 50);
     expect(transferStatic).to.be.equal(true);
   });
